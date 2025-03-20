@@ -6,9 +6,10 @@ import ics
 from ics import Calendar, Event
 from lunardate import LunarDate
 import json
+import pickle
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.urandom(24)
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', os.urandom(24))
 app.config['UPLOAD_FOLDER'] = 'temp'
 
 # 確保臨時目錄存在
@@ -16,6 +17,15 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # 存儲朋友生日數據的字典
 friends_data = {}
+
+# 嘗試從文件加載數據
+data_file = 'friends_data.pkl'
+try:
+    if os.path.exists(data_file):
+        with open(data_file, 'rb') as f:
+            friends_data = pickle.load(f)
+except Exception as e:
+    print(f"Error loading data: {e}")
 
 @app.route('/', methods=['GET'])
 def index():
@@ -52,12 +62,25 @@ def add_friend():
             'solar_day': solar_day
         }
     
+    # 保存數據到文件
+    try:
+        with open(data_file, 'wb') as f:
+            pickle.dump(friends_data, f)
+    except Exception as e:
+        print(f"Error saving data: {e}")
+    
     return redirect(url_for('index'))
 
 @app.route('/remove_friend/<friend_id>', methods=['POST'])
 def remove_friend(friend_id):
     if friend_id in friends_data:
         del friends_data[friend_id]
+        # 保存數據到文件
+        try:
+            with open(data_file, 'wb') as f:
+                pickle.dump(friends_data, f)
+        except Exception as e:
+            print(f"Error saving data: {e}")
     return redirect(url_for('index'))
 
 @app.route('/generate_ics', methods=['POST'])
@@ -109,4 +132,5 @@ def generate_ics():
     return send_file(ics_path, as_attachment=True, download_name=download_name)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)

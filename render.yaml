@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: pyics-birthday-reminder
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+    disk:
+      name: data
+      mountPath: /data
+      sizeGB: 1
