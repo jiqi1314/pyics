@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>生日提醒</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            padding-top: 2rem;
+            background-color: #f8f9fa;
+        }
+        .container {
+            max-width: 800px;
+        }
+        .card {
+            margin-bottom: 1.5rem;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        }
+        .friend-card {
+            margin-bottom: 1rem;
+            border-left: 4px solid #0d6efd;
+        }
+        .btn-remove {
+            padding: 0.2rem 0.5rem;
+            font-size: 0.875rem;
+        }
+        .header-icon {
+            color: #0d6efd;
+            margin-right: 0.5rem;
+        }
+        .empty-list {
+            padding: 2rem;
+            text-align: center;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="bi bi-calendar-heart header-icon" viewBox="0 0 16 16">
+                <path fill-rule="evenodd" d="M4 .5a.5.5 0 0 0-1 0V1H2a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2h-1V.5a.5.5 0 0 0-1 0V1H4V.5ZM1 14V4h14v10a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1Zm7-6.507c1.664-1.711 5.825 1.283 0 5.132-5.825-3.85-1.664-6.843 0-5.132Z"/>
+            </svg>
+            生日提醒
+        </h1>
+        
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">新增朋友生日</h5>
+            </div>
+            <div class="card-body">
+                <form action="/add_friend" method="post">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label for="name" class="form-label">朋友姓名</label>
+                            <input type="text" class="form-control" id="name" name="name" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="calendar_type" class="form-label">日曆類型</label>
+                            <select class="form-select" id="calendar_type" name="calendar_type" required>
+                                <option value="lunar" selected>農曆</option>
+                                <option value="solar">西曆</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row g-3" id="lunar_date_inputs">
+                        <div class="col-md-6">
+                            <label for="lunar_month" class="form-label">農曆月份</label>
+                            <select class="form-select" id="lunar_month" name="lunar_month">
+                                {% for i in range(1, 13) %}
+                                <option value="{{ i }}">{{ i }}月</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="lunar_day" class="form-label">農曆日期</label>
+                            <select class="form-select" id="lunar_day" name="lunar_day">
+                                {% for i in range(1, 31) %}
+                                <option value="{{ i }}">{{ i }}日</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row g-3" id="solar_date_inputs" style="display: none;">
+                        <div class="col-md-6">
+                            <label for="solar_month" class="form-label">西曆月份</label>
+                            <select class="form-select" id="solar_month" name="solar_month">
+                                {% for i in range(1, 13) %}
+                                <option value="{{ i }}">{{ i }}月</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="solar_day" class="form-label">西曆日期</label>
+                            <select class="form-select" id="solar_day" name="solar_day">
+                                {% for i in range(1, 32) %}
+                                <option value="{{ i }}">{{ i }}日</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <button type="submit" class="btn btn-primary">新增朋友</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">朋友生日列表</h5>
+                {% if friends %}
+                <form action="/generate_ics" method="post">
+                    <div class="d-flex align-items-center">
+                        <div class="me-2">
+                            <select class="form-select form-select-sm" name="start_year" id="start_year">
+                                {% for year in range(current_year, current_year + 10) %}
+                                <option value="{{ year }}">{{ year }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="me-2">至</div>
+                        <div class="me-2">
+                            <select class="form-select form-select-sm" name="end_year" id="end_year">
+                                {% for year in range(current_year, current_year + 20) %}
+                                <option value="{{ year }}" {% if year == current_year + 5 %}selected{% endif %}>{{ year }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-light btn-sm">生成ICS檔案</button>
+                    </div>
+                </form>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                {% if friends %}
+                    {% for friend_id, friend in friends.items() %}
+                    <div class="card friend-card">
+                        <div class="card-body d-flex justify-content-between align-items-center">
+                            <div>
+                                <h5 class="card-title">{{ friend.name }}</h5>
+                                {% if friend.calendar_type == 'lunar' %}
+                                <p class="card-text mb-0">農曆 {{ friend.lunar_month }}月{{ friend.lunar_day }}日</p>
+                                {% else %}
+                                <p class="card-text mb-0">西曆 {{ friend.solar_month }}月{{ friend.solar_day }}日</p>
+                                {% endif %}
+                            </div>
+                            <form action="/remove_friend/{{ friend_id }}" method="post">
+                                <button type="submit" class="btn btn-outline-danger btn-remove">移除</button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-list">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" class="bi bi-calendar-x mb-3" viewBox="0 0 16 16">
+                            <path d="M6.146 7.146a.5.5 0 0 1 .708 0L8 8.293l1.146-1.147a.5.5 0 1 1 .708.708L8.707 9l1.147 1.146a.5.5 0 0 1-.708.708L8 9.707l-1.146 1.147a.5.5 0 0 1-.708-.708L7.293 9 6.146 7.854a.5.5 0 0 1 0-.708z"/>
+                            <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/>
+                        </svg>
+                        <p>目前沒有朋友生日資料，請新增朋友</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="mt-4 text-center text-muted">
+            <p>將生成的ICS檔案匯入到您的手機日曆，即可獲得朋友農曆或西曆生日的提醒</p>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 根據選擇的日曆類型顯示相應的日期輸入欄位
+        document.getElementById('calendar_type').addEventListener('change', function() {
+            const calendarType = this.value;
+            const lunarInputs = document.getElementById('lunar_date_inputs');
+            const solarInputs = document.getElementById('solar_date_inputs');
+            
+            if (calendarType === 'lunar') {
+                lunarInputs.style.display = 'flex';
+                solarInputs.style.display = 'none';
+                // 確保農曆日期欄位是必填的
+                document.getElementById('lunar_month').required = true;
+                document.getElementById('lunar_day').required = true;
+                document.getElementById('solar_month').required = false;
+                document.getElementById('solar_day').required = false;
+            } else {
+                lunarInputs.style.display = 'none';
+                solarInputs.style.display = 'flex';
+                // 確保西曆日期欄位是必填的
+                document.getElementById('lunar_month').required = false;
+                document.getElementById('lunar_day').required = false;
+                document.getElementById('solar_month').required = true;
+                document.getElementById('solar_day').required = true;
+            }
+        });
+        
+        // 根據選擇的農曆月份更新日期選項
+        document.getElementById('lunar_month').addEventListener('change', function() {
+            updateLunarDays();
+        });
+
+        function updateLunarDays() {
+            const month = parseInt(document.getElementById('lunar_month').value);
+            const daySelect = document.getElementById('lunar_day');
+            const currentDay = parseInt(daySelect.value) || 1;
+            
+            // 清空現有選項
+            daySelect.innerHTML = '';
+            
+            // 確定每月的天數
+            let daysInMonth = 30; // 大月
+            if (month === 2) {
+                daysInMonth = 29; // 農曆二月最多29天
+            } else if ([4, 6, 9, 11].includes(month)) {
+                daysInMonth = 29; // 小月
+            }
+            
+            // 添加新選項
+            for (let i = 1; i <= daysInMonth; i++) {
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = i + '日';
+                if (i === currentDay) {
+                    option.selected = true;
+                }
+                daySelect.appendChild(option);
+            }
+        }
+        
+        // 根據選擇的西曆月份更新日期選項
+        document.getElementById('solar_month').addEventListener('change', function() {
+            updateSolarDays();
+        });
+
+        function updateSolarDays() {
+            const month = parseInt(document.getElementById('solar_month').value);
+            const daySelect = document.getElementById('solar_day');
+            const currentDay = parseInt(daySelect.value) || 1;
+            
+            // 清空現有選項
+            daySelect.innerHTML = '';
+            
+            // 確定每月的天數
+            let daysInMonth = 31; // 大月
+            if (month === 2) {
+                daysInMonth = 29; // 二月最多29天（考慮閏年）
+            } else if ([4, 6, 9, 11].includes(month)) {
+                daysInMonth = 30; // 小月
+            }
+            
+            // 添加新選項
+            for (let i = 1; i <= daysInMonth; i++) {
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = i + '日';
+                if (i === currentDay) {
+                    option.selected = true;
+                }
+                daySelect.appendChild(option);
+            }
+        }
+        
+        // 初始化
+        updateLunarDays();
+        updateSolarDays();
+    </script>
+</body>
+</html>
